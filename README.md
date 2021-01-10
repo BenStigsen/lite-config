@@ -1,2 +1,2 @@
 # lite-config
-The way I have the text-editor "lite" set up.
+This repository contains plugins and other stuff (if added) that matches my config for the [lite](https://github.com/rxi/lite) text editor.

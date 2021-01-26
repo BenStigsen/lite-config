@@ -5,7 +5,7 @@ command.add(nil, {
   ["themechooser:choose-theme"] = function()
     core.command_view:enter("Set Theme To", function(text)
       local theme = text:match("^%s*(.-)%s*$")
-      local file = loadfile(("./data/user/colors/%s.lua"):format(theme))
+      local file = loadfile(("%s/data/user/colors/%s.lua"):format(EXEDIR, theme))
 
       if file ~= nil then
         file()

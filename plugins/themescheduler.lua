@@ -12,9 +12,9 @@ if next(schedule) ~= nil then
 
   -- load themes
   for k, v in pairs(schedule) do
-    themes[v] = loadfile(("./data/user/colors/%s.lua"):format(v))
+    themes[v] = loadfile(("%s/data/user/colors/%s.lua"):format(EXEDIR, v))
     if themes[v] == nil then
-      core.log("Error loading \"./data/user/colors/%s.lua\"", v)
+      core.log("Error loading \"%s/data/user/colors/%s.lua\"", EXEDIR, v)
     end
   end
 

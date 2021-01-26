@@ -39,7 +39,6 @@ if next(schedule) ~= nil then
 
             core.log("Changed theme \"user.colors.%s\"", theme)
             core.redraw = true
-            collectgarbage()
           end
         end
       end

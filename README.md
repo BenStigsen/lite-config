@@ -9,6 +9,7 @@ Plugin | Description
 -------|-----------------------------------------
 [`themescheduler`](plugins/themescheduler.lua?raw=1) | Schedules themes to certain times
 [`themechooser`](plugins/themechooser.lua?raw=1) | An easy way to change or preview themes on the go
+[`buildsystem`](plugins/buildsystem.lua?raw=1) | Small and simple build system
 
 ---
 

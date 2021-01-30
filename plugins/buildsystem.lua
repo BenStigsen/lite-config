@@ -1,5 +1,6 @@
 local os = require "os"
 local core = require "core"
+local keymap = require "core.keymap"
 local command = require "core.command"
 
 local file = nil
@@ -11,15 +12,20 @@ local builds = {
   [".py"] = function() os.execute(("python %s && cmd /k"):format(file)) end,
 }
 
-command.add(nil, {
-  ["buildsystem:build-file"] = function()
-    file = core.active_view.doc.filename
-    extension = file:match("%.%w-$")
+local function build()
+  file = core.active_view.doc.filename
+  extension = file:match("%..-$")
 
-    if builds[extension] ~= nil then
-      builds[extension]()
-    end
-  end,
+  if builds[extension] ~= nil then
+    core.log("Building %s", file)
+    builds[extension]()
+  end
+end
+
+-- ADD BUILD COMMAND AND KEYBIND
+command.add(nil, {
+  ["buildsystem:build-file"] = function() build() end,
 })
 
+keymap.add {["ctrl+b"] = "buildsystem:build-file"}
 

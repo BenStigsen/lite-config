@@ -22,7 +22,6 @@ local function build()
   end
 end
 
--- ADD BUILD COMMAND AND KEYBIND
 command.add(nil, {
   ["buildsystem:build-file"] = function() build() end,
 })

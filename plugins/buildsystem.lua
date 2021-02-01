@@ -1,4 +1,3 @@
-local os = require "os"
 local core = require "core"
 local keymap = require "core.keymap"
 local command = require "core.command"
@@ -6,10 +5,12 @@ local command = require "core.command"
 local file = nil
 local extension = nil
 
+local function run(cmd) io.popen(("%s && cmd /k"):format(cmd)) end
+
 local builds = {
-  [".html"] = function() os.execute(("start %s"):format(file)) end,
-  [".lua"] = function() os.execute(("lua %s && cmd /k"):format(file)) end,
-  [".py"] = function() os.execute(("python %s && cmd /k"):format(file)) end,
+  [".html"] = function() run(("start %s"):format(file)) end,
+  [".lua"] = function() run(("lua %s"):format(file)) end,
+  [".py"] = function() run(("python %s"):format(file)) end
 }
 
 local function build()

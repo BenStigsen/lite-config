@@ -25,16 +25,31 @@ function autocomplete.add(t)
   autocomplete.map[t.name] =  { files = t.files or ".*", items = items }
 end
 
+local max_symbols = config.max_symbols or 2000
 
 core.add_thread(function()
   local cache = setmetatable({}, { __mode = "k" })
 
   local function get_symbols(doc)
+    if doc.disable_symbols then return {} end
     local i = 1
     local s = {}
+    local symbols_count = 0
     while i < #doc.lines do
       for sym in doc.lines[i]:gmatch(config.symbol_pattern) do
-        s[sym] = true
+        if not s[sym] then
+          symbols_count = symbols_count + 1
+          if symbols_count > max_symbols then
+            s = nil
+            doc.disable_symbols = true
+            core.status_view:show_message("!", style.accent,
+              "Too many symbols in document "..doc.filename..
+              ": stopping auto-complete for this document according to config.max_symbols.")
+            collectgarbage('collect')
+            return {}
+          end
+          s[sym] = true
+        end
       end
       i = i + 1
       if i % 100 == 0 then coroutine.yield() end

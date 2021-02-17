@@ -38,3 +38,4 @@ function StatusView:get_items()
 end
 
 return true
+

@@ -1,10 +1,13 @@
 local core = require "core"
 local command = require "core.command"
+local common = require "core.common"
 local config = require "core.config"
 local DocView = require "core.docview"
 local Doc = require "core.doc"
+local tokenizer = require "core.tokenizer"
 
 local cache = setmetatable({}, { __mode = "k" })
+
 
 local function add_to_stat(stat, val)
   for i = 1, #stat do
@@ -15,6 +18,7 @@ local function add_to_stat(stat, val)
   end
   stat[#stat + 1] = {val, 1}
 end
+
 
 local function optimal_indent_from_stat(stat)
   if #stat == 0 then return nil, 0 end
@@ -40,12 +44,43 @@ local function optimal_indent_from_stat(stat)
   return bins[1][1], bins[1][2]
 end
 
-local auto_detect_max_lines = 400
+
+-- return nil if it is a comment or blank line or the initial part of the
+-- line otherwise.
+-- we don't need to have the whole line to detect indentation.
+local function get_first_line_part(tokens)
+  local i, n = 1, #tokens
+  while i + 1 <= n do
+    local ttype, ttext = tokens[i], tokens[i + 1]
+    if ttype ~= "comment" and ttext:gsub("%s+", "") ~= "" then
+      return ttext
+    end
+    i = i + 2
+  end
+end
+
+local function get_non_empty_lines(syntax, lines)
+  return coroutine.wrap(function()
+    local tokens, state
+    local i = 0
+    for _, line in ipairs(lines) do
+      tokens, state = tokenizer.tokenize(syntax, line, state)
+      local line_start = get_first_line_part(tokens)
+      if line_start then
+        i = i + 1
+        coroutine.yield(i, line_start)
+      end
+    end
+  end)
+end
+
+
+local auto_detect_max_lines = 200
 
 local function detect_indent_stat(doc)
   local stat = {}
   local tab_count = 0
-  for i, text in ipairs(doc.lines) do
+  for i, text in get_non_empty_lines(doc.syntax, doc.lines) do
     local str = text:match("^ %s+%S")
     if str then add_to_stat(stat, #str - 1) end
     local str = text:match("^\t+")
@@ -56,20 +91,30 @@ local function detect_indent_stat(doc)
   table.sort(stat, function(a, b) return a[1] < b[1] end)
   local indent, score = optimal_indent_from_stat(stat)
   if tab_count > score then
-    core.log_quiet("Detect-indent: using tabs indentation")
-    return "hard"
-  elseif indent then
-    core.log_quiet("Detect-indent: using indentation size of %d", indent)
-    return "soft", indent
+    return "hard", nil, tab_count
+  else
+    return "soft", indent or config.indent_size, score or 0
   end
 end
 
+
+local doc_text_input = Doc.text_input
+local adjust_threshold = 5
+
 local function update_cache(doc)
-  local type, size = detect_indent_stat(doc)
-  if type then
-    cache[doc] = { type = type, size = size }
+  local type, size, score = detect_indent_stat(doc)
+  cache[doc] = { type = type, size = size }
+  doc.indent_spaces = (type == "hard" and "tab" or size) .. (score < adjust_threshold and "*" or "")
+  if score < adjust_threshold and Doc.text_input == doc_text_input then
+    Doc.text_input = function(self, ...)
+      doc_text_input(self, ...)
+      update_cache(self)
+    end
+  elseif score >= adjust_threshold and Doc.text_input ~= doc_text_input then
+    Doc.text_input = doc_text_input
   end
 end
+
 
 local new = Doc.new
 function Doc:new(...)
@@ -83,6 +128,7 @@ function Doc:clean(...)
   update_cache(self)
 end
 
+
 local function with_indent_override(doc, fn, ...)
   local c = cache[doc]
   if not c then
@@ -95,10 +141,12 @@ local function with_indent_override(doc, fn, ...)
   return r1, r2, r3
 end
 
+
 local perform = command.perform
 function command.perform(...)
   return with_indent_override(core.active_view.doc, perform, ...)
 end
+
 
 local draw = DocView.draw
 function DocView:draw(...)

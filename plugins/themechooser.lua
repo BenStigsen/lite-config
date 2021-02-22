@@ -9,14 +9,14 @@ command.add(nil, {
 
       if file ~= nil then
         file()
-        core.log("Changed theme to \"%s\"", theme)
+        core.log("Changed theme to \"%s\"", text)
         core.redraw = true
       else
-        core.log("Error loading theme \"%s\"", theme)
+        core.log("Error loading theme \"%s\"", text)
       end
     end, function(text)
       return common.path_suggest("data/colors/" .. text)
     end)
-  end,
+  end
 })
 

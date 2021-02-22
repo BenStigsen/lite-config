@@ -103,7 +103,7 @@ command.add(nil, {
 keymap.add {
   ["ctrl+0"] = "scale:reset",
   ["ctrl+-"] = "scale:decrease",
-  ["ctrl+="] = "scale:increase",
+  ["ctrl++"] = "scale:increase",
 }
 
 return { get_scale = get_scale, set_scale = set_scale }

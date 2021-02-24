@@ -5,10 +5,10 @@ local command = require "core.command"
 -- add themes here (24 hour format)
 local schedule = {
   ["07:00"] = "summer",
-  ["20:00"] = "winter",
+  ["20:46"] = "winter",
 }
 
--- get theme on load
+-- get theme based on time
 local function get_current_theme(target)
   local min = "00:00"
   local max = "23:59"
@@ -37,6 +37,7 @@ end
 
 -- scheduler
 if next(schedule) ~= nil then
+  local prev = ""
   local themes = {}
 
   -- load themes
@@ -46,37 +47,19 @@ if next(schedule) ~= nil then
       core.log("Error loading \"%s/data/colors/%s.lua\"", EXEDIR, v)
     end
   end
-  
-  -- apply theme on load
+
+  -- get current theme on load
   local time = os.date("*t")
   local theme = get_current_theme(("%02d:%02d"):format(time.hour, time.min))
   
-  themes[theme]()
-  
   core.add_thread(function()
-    local changed = {hour = nil, min = nil}
-    local theme = nil
-
     while true do
-      local time = os.date("*t")
-
-      if time.hour ~= changed.hour or time.min ~= changed.min then
-        changed.hour = time.hour
-        changed.min = time.min
-
-        local str = ("%02d:%02d"):format(time.hour, time.min)
-
-        if schedule[str] ~= nil and schedule[str] ~= theme then
-          core.log("NEW THEME")
-          theme = schedule[str]
-
-          if themes[theme] ~= nil then
-            themes[theme]()
-
-            core.log("Changed theme \"colors.%s\"", theme)
-            core.redraw = true
-          end
-        end
+      time = os.date("*t")
+      theme = get_current_theme(("%02d:%02d"):format(time.hour, time.min))
+      
+      if prev ~= theme and themes[theme] ~= nil then
+        prev = theme
+        themes[theme]()
       end
 
       coroutine.yield(config.project_scan_rate)

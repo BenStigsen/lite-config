@@ -18,8 +18,10 @@ These are my own plugins:
 
 Plugin | Description
 -------|-----------------------------------------
-[`themescheduler`](plugins/themescheduler.lua?raw=1) | Schedules themes to certain times
+[`themescheduler`](plugins/themescheduler.lua?raw=1) | Schedules themes to
+certain times (save your eyes)
 [`themechooser`](plugins/themechooser.lua?raw=1) | An easy way to change or preview themes on the go
+[`pomodoro`](plugins/pomodoro.lua?raw=1) | Simple Pomodoro timer
 
 ---
 

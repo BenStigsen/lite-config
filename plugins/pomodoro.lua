@@ -65,6 +65,7 @@ end)
 
 command.add(nil, {
   ["pomodoro:start"] = function()
+    state = 1
     time = os.time()
   end
 })

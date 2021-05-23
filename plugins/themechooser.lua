@@ -1,3 +1,4 @@
+-- mod-version:1 -- lite-xl 1.16
 local core = require "core"
 local command = require "core.command"
 local common = require "core.common"
@@ -15,7 +16,7 @@ command.add(nil, {
         core.log("Error loading theme \"%s\"", text)
       end
     end, function(text)
-      return common.path_suggest("data/colors/" .. text)
+      return common.path_suggest(EXEDIR .. "/data/colors/" .. text)
     end)
   end
 })

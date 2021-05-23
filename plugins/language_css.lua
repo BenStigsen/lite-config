@@ -1,3 +1,4 @@
+-- mod-version:1 -- lite-xl 1.16
 local syntax = require "core.syntax"
 
 syntax.add {
@@ -9,7 +10,8 @@ syntax.add {
     { pattern = { '"', '"', '\\' },   type = "string"   },
     { pattern = { "'", "'", '\\' },   type = "string"   },
     { pattern = "[%a][%w-]*%s*%f[:]", type = "keyword"  },
-    { pattern = "#%x+",               type = "string"   },
+    { pattern = "#%x%x%x%x%x%x%f[%W]",type = "string"   },
+    { pattern = "#%x%x%x%f[%W]",      type = "string"   },
     { pattern = "-?%d+[%d%.]*p[xt]",  type = "number"   },
     { pattern = "-?%d+[%d%.]*deg",    type = "number"   },
     { pattern = "-?%d+[%d%.]*",       type = "number"   },

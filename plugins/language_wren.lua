@@ -1,3 +1,4 @@
+-- mod-version:1 -- lite-xl 1.16
 local syntax = require "core.syntax"
 
 syntax.add {
@@ -12,7 +13,7 @@ syntax.add {
     { pattern = "%.%.%.?",                type = "operator" },
     { pattern = "[<>!=]=",                type = "operator" },
     { pattern = "[%+%-=/%*%^%%<>!~|&?:]", type = "operator" },
-    { pattern = "[%a_][%w_]*%s*%f[(\"{]", type = "function" },
+    { pattern = "[%a_][%w_]*%f[(\"{]",    type = "function" },
     { pattern = "[%a_][%w_]*",            type = "symbol"   },
   },
   symbols = {

@@ -1,10 +1,8 @@
+-- mod-version:1 -- lite-xl 1.16
 local core = require "core"
 local config = require "core.config"
 local command = require "core.command"
 local Doc = require "core.doc"
-
--- Disable "detect indent" plugin if exists
-config.detectindent = false
 
 command.add(nil, {
   ["indent:set-indentation-level"] = function()

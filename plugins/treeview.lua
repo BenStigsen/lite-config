@@ -1,3 +1,4 @@
+-- mod-version:1 -- lite-xl 1.16
 local core = require "core"
 local common = require "core.common"
 local command = require "core.command"
@@ -6,7 +7,13 @@ local keymap = require "core.keymap"
 local style = require "core.style"
 local View = require "core.view"
 
-config.treeview_size = 200 * SCALE
+local default_treeview_size = 200 * SCALE
+local tooltip_offset = style.font:get_height("A")
+local tooltip_border = 1
+local tooltip_delay = 0.5
+local tooltip_alpha = 255
+local tooltip_alpha_rate = 1
+
 
 local function get_depth(filename)
   local n = 1
@@ -16,6 +23,11 @@ local function get_depth(filename)
   return n
 end
 
+local function replace_alpha(color, alpha)
+  local r, g, b = table.unpack(color)
+  return { r, g, b, alpha }
+end
+
 
 local TreeView = View:extend()
 
@@ -23,9 +35,19 @@ function TreeView:new()
   TreeView.super.new(self)
   self.scrollable = true
   self.visible = true
-  self.init_size = config.treeview_size
+  self.init_size = true
+  self.target_size = default_treeview_size
   self.cache = {}
   self.last = {}
+  self.tooltip = { x = 0, y = 0, begin = 0, alpha = 0 }
+end
+
+
+function TreeView:set_target_size(axis, value)
+  if axis == "x" then
+    self.target_size = value
+    return true
+  end
 end
 
 
@@ -134,16 +156,36 @@ function TreeView:each_item()
 end
 
 
+function TreeView:get_text_bounding_box(item, x, y, w, h)
+  local icon_width = style.icon_font:get_width("D")
+  local xoffset = item.depth * style.padding.x + style.padding.x + icon_width
+  x = x + xoffset
+  w = style.font:get_width(item.name) + 2 * style.padding.x
+  return x, y, w, h
+end
+
+
 function TreeView:on_mouse_moved(px, py, ...)
   TreeView.super.on_mouse_moved(self, px, py, ...)
   if self.dragging_scrollbar then return end
-  self.hovered_item = nil
+  
+  local item_changed, tooltip_changed
   for item, x,y,w,h in self:each_item() do
     if px > x and py > y and px <= x + w and py <= y + h then
+      item_changed = true
       self.hovered_item = item
+      
+      x,y,w,h = self:get_text_bounding_box(item, x,y,w,h)
+      if px > x and py > y and px <= x + w and py <= y + h then
+        tooltip_changed = true
+        self.tooltip.x, self.tooltip.y = px, py
+        self.tooltip.begin = system.get_time()
+      end
       break
     end
   end
+  if not item_changed then self.hovered_item = nil end
+  if not tooltip_changed then self.tooltip.x, self.tooltip.y = nil, nil end
 end
 
 
@@ -176,7 +218,8 @@ function TreeView:on_mouse_pressed(button, x, y, clicks)
     end
   else
     core.try(function()
-      core.root_view:open_doc(core.open_doc(self.hovered_item.abs_filename))
+      local doc_filename = common.relative_path(core.project_dir, self.hovered_item.abs_filename)
+      core.root_view:open_doc(core.open_doc(doc_filename))
     end)
   end
 end
@@ -184,15 +227,19 @@ end
 
 function TreeView:update()
   -- update width
+  local dest = self.visible and self.target_size or 0
   if self.init_size then
-    self.size.x = self.init_size
-    self.init_size = nil
-  elseif self.goto_size then
-    if self.goto_size ~= self.size.x then
-      self:move_towards(self.size, "x", self.goto_size)
-    else
-      self.goto_size = nil
-    end
+    self.size.x = dest
+    self.init_size = false
+  else
+    self:move_towards(self.size, "x", dest)
+  end
+  
+  local duration = system.get_time() - self.tooltip.begin
+  if self.hovered_item and self.tooltip.x and duration > tooltip_delay then
+    self:move_towards(self.tooltip, "alpha", tooltip_alpha, tooltip_alpha_rate)
+  else
+    self.tooltip.alpha = 0
   end
 
   TreeView.super.update(self)
@@ -204,11 +251,30 @@ function TreeView:get_scrollable_size()
 end
 
 
+function TreeView:draw_tooltip()
+  local text = common.home_encode(self.hovered_item.abs_filename)
+  local w, h = style.font:get_width(text), style.font:get_height(text)
+
+  local x, y = self.tooltip.x + tooltip_offset, self.tooltip.y + tooltip_offset
+  w, h = w + style.padding.x, h + style.padding.y
+
+  if x + w > core.root_view.root_node.size.x then -- check if we can span right
+    x = x - w -- span left instead
+  end
+
+  local bx, by = x - tooltip_border, y - tooltip_border
+  local bw, bh = w + 2 * tooltip_border, h + 2 * tooltip_border
+  renderer.draw_rect(bx, by, bw, bh, replace_alpha(style.text, self.tooltip.alpha))
+  renderer.draw_rect(x, y, w, h, replace_alpha(style.background2, self.tooltip.alpha))
+  common.draw_text(style.font, replace_alpha(style.text, self.tooltip.alpha), text, "center", x, y, w, h)
+end
+
+
 function TreeView:draw()
   self:draw_background(style.background2)
 
   local icon_width = style.icon_font:get_width("D")
-  local spacing = style.font:get_width(" ") * 2
+  local spacing = style.icon_font:get_width("f") / 2
 
   local doc = core.active_view.doc
   local active_filename = doc and system.absolute_path(doc.filename or "")
@@ -248,6 +314,9 @@ function TreeView:draw()
   end
 
   self:draw_scrollbar()
+  if self.hovered_item and self.tooltip.alpha > 0 then
+    core.root_view:defer_draw(self.draw_tooltip, self)
+  end
 end
 
 
@@ -266,6 +335,8 @@ local toolbar_plugin, ToolbarView = core.try(require, "plugins.toolbarview")
 if config.toolbarview ~= false and toolbar_plugin then
   local toolbar_view = ToolbarView()
   treeview_node:split("down", toolbar_view, {y = true})
+  local min_toolbar_width = toolbar_view:get_min_width()
+  view:set_target_size("x", math.max(default_treeview_size, min_toolbar_width))
   command.add(nil, {
     ["toolbar:toggle"] = function()
       toolbar_view:toggle_visible()
@@ -277,14 +348,7 @@ end
 -- register commands and keymap
 command.add(nil, {
   ["treeview:toggle"] = function()
-    if view.visible then
-      view.previous_size = view.size.x
-      view.visible = false
-      view.goto_size = 0
-    else
-      view.visible = true
-      view.goto_size = view.previous_size
-    end
+    view.visible = not view.visible
   end,
 })
 

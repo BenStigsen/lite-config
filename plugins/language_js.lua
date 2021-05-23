@@ -1,3 +1,4 @@
+-- mod-version:1 -- lite-xl 1.16
 local syntax = require "core.syntax"
 
 syntax.add {
@@ -6,6 +7,7 @@ syntax.add {
   patterns = {
     { pattern = "//.-\n",               type = "comment"  },
     { pattern = { "/%*", "%*/" },       type = "comment"  },
+    { pattern = { '/%g', '/', '\\' },   type = "string"   },
     { pattern = { '"', '"', '\\' },     type = "string"   },
     { pattern = { "'", "'", '\\' },     type = "string"   },
     { pattern = { "`", "`", '\\' },     type = "string"   },
@@ -39,6 +41,7 @@ syntax.add {
     ["if"]         = "keyword",
     ["import"]     = "keyword",
     ["in"]         = "keyword",
+    ["of"]         = "keyword",
     ["instanceof"] = "keyword",
     ["let"]        = "keyword",
     ["new"]        = "keyword",

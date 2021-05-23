@@ -1,11 +1,13 @@
+-- mod-version:1 -- lite-xl 1.16
 local core = require "core"
 local config = require "core.config"
 local command = require "core.command"
 
 -- add themes here (24 hour format)
 local schedule = {
-  ["07:00"] = "summer",
-  ["20:46"] = "winter",
+  --["07:00"] = "summer",
+  --["20:00"] = "winter",
+  ["00:01"] = "winter",
 }
 
 -- get theme based on time
